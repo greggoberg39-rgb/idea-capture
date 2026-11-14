@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stupid Idea</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Idea">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#141828">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#141828;color:#fff;font-family:-apple-system,system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 18px 30px}
+h1{font-size:22px;margin:22px 0 4px}
+p.s{margin:0 0 14px;color:#9aa3c0;font-size:14px;text-align:center}
+#mic{width:150px;height:150px;border-radius:50%;border:0;background:#ffc828;color:#141828;font-size:64px;box-shadow:0 0 0 0 rgba(255,200,40,.6);margin:8px 0}
+#mic.on{background:#ff4d4d;color:#fff;animation:p 1.2s infinite}
+@keyframes p{70%{box-shadow:0 0 0 28px rgba(255,77,77,0)}100%{box-shadow:0 0 0 0 rgba(255,77,77,0)}}
+#st{height:20px;font-size:14px;color:#9aa3c0;margin-bottom:8px}
+textarea{width:100%;max-width:560px;height:160px;border-radius:14px;border:1px solid #38406a;background:#1d2340;color:#fff;font-size:18px;padding:14px}
+#send{width:100%;max-width:560px;margin-top:14px;padding:18px;border:0;border-radius:14px;background:#2fbf71;color:#fff;font-size:20px;font-weight:600}
+#send:disabled{opacity:.4}
+#clr{margin-top:10px;background:none;border:0;color:#9aa3c0;font-size:15px}
+.hint{margin-top:26px;max-width:560px;font-size:13px;color:#8089a8;line-height:1.5;text-align:center}
+</style></head><body>
+<h1>Stupid Idea</h1>
+<p class="s">Tap the mic, talk, tap Send. It opens Mail with your idea filled in.</p>
+<button id="mic" aria-label="Record">🎤</button>
+<div id="st"></div>
+<textarea id="t" placeholder="…or type it, or use your keyboard's 🎤 dictation"></textarea>
+<button id="send" disabled>Send idea ✉️</button>
+<button id="clr">Clear</button>
+<div class="hint" id="hint">Add to Home Screen: tap the Share icon in Safari, then "Add to Home Screen". Opens like an app.<br>Ideas go to gregg.oberg39+ideas@gmail.com with subject "Idea".</div>
+<script>
+const TO="gregg.oberg39+ideas@gmail.com";
+const t=document.getElementById('t'),mic=document.getElementById('mic'),st=document.getElementById('st'),send=document.getElementById('send');
+if(navigator.standalone||matchMedia('(display-mode: standalone)').matches)document.getElementById('hint').style.display='none';
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,on=false,base='';
+function upd(){send.disabled=!t.value.trim()}
+t.addEventListener('input',upd);
+if(!SR){mic.style.opacity=.35;st.textContent='Mic not supported here. Type, or use your keyboard 🎤.'}
+mic.onclick=()=>{
+  if(!SR){t.focus();return}
+  if(on){rec.stop();return}
+  rec=new SR();rec.lang='en-US';rec.continuous=true;rec.interimResults=true;
+  base=t.value?t.value.trim()+' ':'';
+  rec.onresult=e=>{let s='';for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;t.value=base+s;upd()};
+  rec.onerror=e=>{st.textContent='Mic error: '+e.error+'. You can still type.'};
+  rec.onend=()=>{on=false;mic.classList.remove('on');if(!/error/.test(st.textContent))st.textContent=''};
+  rec.onstart=()=>{on=true;mic.classList.add('on');st.textContent='Listening… tap again to stop'};
+  try{rec.start()}catch(x){st.textContent='Could not start mic'}
+};
+send.onclick=()=>{
+  const b=t.value.trim();if(!b)return;
+  if(on)rec.stop();
+  location.href='mailto:'+TO+'?subject='+encodeURIComponent('Idea')+'&body='+encodeURIComponent(b);
+  setTimeout(()=>{st.textContent='If Mail opened, tap Send there.'},600);
+};
+document.getElementById('clr').onclick=()=>{t.value='';upd();st.textContent=''};
+</script>
+</body></html>
